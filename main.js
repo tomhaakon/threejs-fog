@@ -6,63 +6,91 @@ import { sendError } from './errorHandler.js'
 import { sendStatus } from './handleStatus.js'
 
 sendError('loaded', 'main.js') // send msg that main.js is loaded
-
 function main() {
-  //
-  //canvas
   const canvas = document.querySelector('#c')
   const renderer = new THREE.WebGLRenderer({ antialias: true, canvas })
 
-  //camera
-  const fov = 45
-  const aspect = 2
+  const fov = 75
+  const aspect = 2 // the canvas default
   const near = 0.1
-  const far = 100
+  const far = 5
   const camera = new THREE.PerspectiveCamera(fov, aspect, near, far)
-  camera.position.set(0, 10, 20)
+  camera.position.z = 2
 
-  //controls
-  const controls = new OrbitControls(camera, canvas)
-  controls.target.set(0, 5, 0)
-  controls.update()
-
-  //scene
   const scene = new THREE.Scene()
-  scene.background = new THREE.Color('black')
 
-  /*
-  
-  innhold
-  
-  */
+  {
+    const near = 1
+    const far = 2
+    const color = 'lightblue'
+    scene.fog = new THREE.Fog(color, near, far)
+    scene.background = new THREE.Color(color)
+  }
 
-  //render functinons
- function resizeRendererToDisplaySize(renderer) {
-    //
+  {
+    const color = 0xffffff
+    const intensity = 3
+    const light = new THREE.DirectionalLight(color, intensity)
+    light.position.set(-1, 2, 4)
+    scene.add(light)
+  }
+
+  const boxWidth = 1
+  const boxHeight = 1
+  const boxDepth = 1
+  const geometry = new THREE.BoxGeometry(boxWidth, boxHeight, boxDepth)
+
+  function makeInstance(geometry, color, x) {
+    const material = new THREE.MeshPhongMaterial({ color })
+
+    const cube = new THREE.Mesh(geometry, material)
+    scene.add(cube)
+
+    cube.position.x = x
+
+    return cube
+  }
+
+  const cubes = [
+    makeInstance(geometry, 0x44aa88, 0),
+    makeInstance(geometry, 0x8844aa, -2),
+    makeInstance(geometry, 0xaa8844, 2),
+  ]
+
+  function resizeRendererToDisplaySize(renderer) {
     const canvas = renderer.domElement
     const width = canvas.clientWidth
     const height = canvas.clientHeight
     const needResize = canvas.width !== width || canvas.height !== height
     if (needResize) {
-      //
       renderer.setSize(width, height, false)
     }
+
     return needResize
   }
-  function render() {
+
+  function render(time) {
+    time *= 0.001
+
     if (resizeRendererToDisplaySize(renderer)) {
-      //
       const canvas = renderer.domElement
       camera.aspect = canvas.clientWidth / canvas.clientHeight
       camera.updateProjectionMatrix()
     }
+
+    cubes.forEach((cube, ndx) => {
+      const speed = 1 + ndx * 0.1
+      const rot = time * speed
+      cube.rotation.x = rot
+      cube.rotation.y = rot
+    })
+
     renderer.render(scene, camera)
 
     requestAnimationFrame(render)
   }
+
   requestAnimationFrame(render)
-  //
-  sendStatus(true) // icon that shows that main functio is running
-  //
 }
+
 main()
